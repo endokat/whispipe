@@ -11,8 +11,15 @@ import io
 def main():
     parser = argparse.ArgumentParser(description="Voice listener using Whisper")
     parser.add_argument("-m", "--model", type=str, default="base", help="Whisper model to use")
-    parser.add_argument("-d", "--device", type=str, default="cpu", help="Device to use for Whisper")
+    parser.add_argument("-d", "--device", type=str, default="cuda", help="Device to use for Whisper")
+    silence_group = parser.add_mutually_exclusive_group()
+    silence_group.add_argument("-n", "--noline", action="store_true", help="No newline on silence")
+    silence_group.add_argument("-t", "--timeout", type=float, default=1.0, help="Timeout for silence")
     args = parser.parse_args()
+
+    if device == "cuda":
+        if not torch.cuda.is_available():
+            device = "cpu"
 
     model = whisper.load_model(args.model, device=args.device)
     temp_audio_path = "/tmp/whispipe_tmp.wav"
@@ -44,15 +51,17 @@ def main():
                     sys.stdout.flush()
             sys.stdout.write(output)
             sys.stdout.flush()
+
             if output and len(output) > 5 and output == last_output:
-                sys.stdout.write("\n")
-                sys.stdout.flush()
+                if not args.noline:
+                    sys.stdout.write("\n")
+                    sys.stdout.flush()
                 last_output = None
                 recorder.kill()
                 break
             else:
                 last_output = output
-                time.sleep(1)
+                time.sleep(args.timeout)
 
 
 if __name__ == "__main__":

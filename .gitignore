@@ -17,7 +17,6 @@ eggs/
 parts/
 sdist/
 var/
-wheels/
 share/python-wheels/
 *.egg-info/
 .installed.cfg
@@ -160,4 +159,3 @@ cython_debug/
 #.idea/
 __pycache__/
 
-wheels/
