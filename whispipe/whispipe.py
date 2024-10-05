@@ -1,5 +1,7 @@
 import argparse
+import time
 import sys
+import shutil
 import subprocess
 import whisper
 import os
@@ -24,24 +26,42 @@ def main():
             "-y",
             "-f", "pulse",
             "-i", "default",
-            "-af", "silencedetect=n=-50dB:d=1",
             "-ac", "1",
             temp_audio_path
         ]
         try:
-          subprocess.run(command, timeout=5, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        except:
+          os.remove(temp_audio_path)
+        except FileNotFoundError:
           pass
+        recorder = subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        while not os.path.isfile(temp_audio_path) or os.path.getsize(temp_audio_path) == 0:
+          time.sleep(0.1)
 
-        # Transcribe the recorded audio using Whisper
-        result = model.transcribe(temp_audio_path)
-        output = result["text"].strip()
+        last_output = None
+        while True:
+            # Transcribe the recorded audio using Whisper
+            #copy_path = "/tmp/whispipe_tmp_copy.wav"
+            #shutil.copyfile(temp_audio_path, copy_path)
+            result = model.transcribe(temp_audio_path)
+            output = result["text"].strip()
 
-        # Print the output to stdout
-        if output:
+            # Print the output to stdout
+            if last_output is not None:
+                for _ in range(len(last_output)):
+                    sys.stdout.write("")
+                    sys.stdout.flush()
             sys.stdout.write(output)
-            sys.stdout.write(" ")
             sys.stdout.flush()
+            if output and len(output) > 5 and output == last_output:
+                sys.stdout.write("\n")
+                sys.stdout.flush()
+                last_output = None
+                recorder.kill()
+                break
+            else:
+                last_output = output
+                time.sleep(1)
+
 
 
 if __name__ == "__main__":
