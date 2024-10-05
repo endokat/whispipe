@@ -11,17 +11,19 @@ import io
 def main():
     parser = argparse.ArgumentParser(description="Voice listener using Whisper")
     parser.add_argument("-m", "--model", type=str, default="base", help="Whisper model to use")
-    parser.add_argument("-d", "--device", type=str, default="cuda", help="Device to use for Whisper")
+    parser.add_argument("-d", "--device", type=str, default="cuda", help="Device to use for Whisper (falls back to cpu if CUDA unavailable)")
     silence_group = parser.add_mutually_exclusive_group()
-    silence_group.add_argument("-n", "--noline", action="store_true", help="No newline on silence")
+    silence_group.add_argument("-n", "--noline", action="store_true", help="Emit no newline on silence")
     silence_group.add_argument("-t", "--timeout", type=float, default=1.0, help="Timeout for silence")
     args = parser.parse_args()
 
+    device = args.device
     if device == "cuda":
+        import torch
         if not torch.cuda.is_available():
             device = "cpu"
 
-    model = whisper.load_model(args.model, device=args.device)
+    model = whisper.load_model(args.model, device=device)
     temp_audio_path = "/tmp/whispipe_tmp.wav"
     while True:
         command = [
@@ -52,7 +54,7 @@ def main():
             sys.stdout.write(output)
             sys.stdout.flush()
 
-            if output and len(output) > 5 and output == last_output:
+            if output and output == last_output:
                 if not args.noline:
                     sys.stdout.write("\n")
                     sys.stdout.flush()

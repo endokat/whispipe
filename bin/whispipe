@@ -1,2 +1,15 @@
 #!/usr/bin/env bash
-poetry run python -m whispipe $@ 2>/dev/null
+
+# Define --debug flag
+PIPE_STDERR=1
+ARGS="$@"
+if [[ "$1" == "--debug" ]]; then
+    PIPE_STDERR=0
+    ARGS="${@:2}"
+fi
+
+if [[ $PIPE_STDERR -eq 0 ]]; then
+    poetry run python -m whispipe $ARGS
+else
+    poetry run python -m whispipe $ARGS 2>/dev/null
+fi
