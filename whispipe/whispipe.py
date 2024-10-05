@@ -9,16 +9,12 @@ import io
 
 
 def main():
-    # Parse command line options
     parser = argparse.ArgumentParser(description="Voice listener using Whisper")
     parser.add_argument("-m", "--model", type=str, default="base", help="Whisper model to use")
     parser.add_argument("-d", "--device", type=str, default="cpu", help="Device to use for Whisper")
     args = parser.parse_args()
 
-    # Load Whisper model
     model = whisper.load_model(args.model, device=args.device)
-
-    # Record audio until silence is detected after initial speech
     temp_audio_path = "/tmp/whispipe_tmp.wav"
     while True:
         command = [
@@ -39,13 +35,9 @@ def main():
 
         last_output = None
         while True:
-            # Transcribe the recorded audio using Whisper
-            #copy_path = "/tmp/whispipe_tmp_copy.wav"
-            #shutil.copyfile(temp_audio_path, copy_path)
             result = model.transcribe(temp_audio_path)
             output = result["text"].strip()
 
-            # Print the output to stdout
             if last_output is not None:
                 for _ in range(len(last_output)):
                     sys.stdout.write("")
@@ -61,7 +53,6 @@ def main():
             else:
                 last_output = output
                 time.sleep(1)
-
 
 
 if __name__ == "__main__":
